@@ -36,10 +36,13 @@ Sometimes the domain name can contain unusual port numbers after a colon, like :
 Some URLs are made very long to hide the dangerous parts, because people tend to look only at the beginning part.
 
 11. "@" symbol: 
-Attackers use @ symbol to hide the real domain. Anything before @ is treated as username info. Example: "google.com@mysite.xyz", here "google.com" is not the real destination, "mysite.xyz" is.
+Attackers use @ symbol to hide the real domain. Anything before @ is treated as username info. 
 
 12. Too many special characters: 
 Some URLs may contain too many special characters like hyphen and underscore.
 
 13. Urgency message: 
 Some links contains scary or urgent messages like "Your account is locked. Verify now quickly" which makes the user act quickly without checking.
+
+14. Very long paths: 
+Some paths of URL can be made very long, which is suspicious.
