@@ -31,8 +31,9 @@ def whois_features(domain: str) -> dict:
 
 def dns_features(domain: str) -> dict:
     results = {
-    "has_mx": False,
-    "has_spf": False,
+    "has_mx_record": False,
+    "has_txt_record": False,
+    "has_spf" = False,
     "a_record_count": 0,
     "ttl": -1
     }
@@ -52,6 +53,7 @@ def dns_features(domain: str) -> dict:
 
     try:
         txt = dr.resolve(domain, 'TXT')
+        results["has_txt_record"] = True
         for rdata in txt:
             txt_record = ''.join(
                 s.decode() if isinstance(s, bytes) else str(s)
