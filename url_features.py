@@ -17,33 +17,36 @@ def analyze_url(url):
     suffix = ext.suffix
     full_domain = ext.top_domain_under_public_suffix
 
-    # basic features
-    checks["url_length"] = len(url)
-    checks["num_hyphens"] = url.count("-")
-    checks["num_dots"] = url.count(".")
-    checks["num_digits"] = len(re.findall(r"\d+",url))
+    checks = {
+    #basic features
+        "url_length": len(url),
+        "num_hyphens": url.count("-"),
+        "num_dots": url.count("."),
+        "num_digits": len(re.findall(r"\d+", url)),
 
-    # domain features
-    checks["has_ip"] = bool(re.search(r"\d+\.\d+\.\d+\.\d+",url))
-    checks["has_@"] = "@" in url
-    checks["num_subdomain"] = len(subdomain.split(".")) if subdomain else 0   
+        # domain features
+        "has_ip": bool(re.search(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", url)),
+        "has_@": "@" in url,
+        "num_subdomain": len(subdomain.split(".")) if subdomain else 0,
 
-    # sus things
-    checks["num_sus_word"] = sum(1 for word in sus_words if word in url.lower())
-    checks["sus_tld"] = suffix in sus_tld
+        # suspicious things
+        "num_sus_word": sum(1 for word in sus_words if word in url.lower()),
+        "sus_tld": suffix in sus_tld,
 
-    checks["domain"] = domain
-    checks["full_domain"] = full_domain
-    checks["path_length"] = len(parsed.path)
+        "domain": domain,
+        "full_domain": full_domain,
+        "path_length": len(parsed.path),
 
-    checks["has_hex_encoding"] = bool(re.search(r"%[0-9A-fa-f]{2}",url))
-    checks["uses_https"] = parsed.scheme == "https"
+        "has_hex_encoding": bool(re.search(r"%[0-9A-Fa-f]{2}", url)),
+        "uses_https": parsed.scheme == "https",
+    }
+    return checks
 
-    # final score
+# final score
+def lex_score(checks : dict) -> float:
     score = 0
-    if checks["url_length"]>75: score+=1
-    
-    if checks["url_length"]>=55: score+=1
+    if checks["url_length"]>75: score+=2
+    elif checks["url_length"]>=55: score+=1
 
     if checks["num_hyphens"]>=3: score+=2
     elif checks["num_hyphens"]==2: score+=1
@@ -73,18 +76,5 @@ def analyze_url(url):
 
     if not checks["uses_https"]: score+=3
 
-    checks["risk_score"] = score
+    return score/28;
 
-    if score<=7:
-        checks["label"] = "SAFE"
-    elif score<=14:
-        checks["label"] = "SUSPICIOUS"
-    else:
-        checks["label"] = "PHISHING"
-
-    return checks
-
-url = input("Enter URL to check: ")
-res = analyze_url(url)
-    
-print("Result:",res["label"])
