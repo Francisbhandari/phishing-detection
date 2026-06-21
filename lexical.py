@@ -78,3 +78,13 @@ def lex_score(checks : dict) -> float:
 
     return score/28;
 
+
+def shannon_entropy(s: str) -> float:
+    """Calculate Shannon entropy of a string."""
+    if not s:
+        return 0.0
+    freq = {}
+    for c in s:
+        freq[c] = freq.get(c, 0) + 1
+    n = len(s)
+    return -sum((f / n) * math.log2(f / n) for f in freq.values())
