@@ -1,6 +1,7 @@
 import re
 import tldextract as te
 from urllib.parse import urlparse
+import math
 
 sus_words=["login","verify","secure","confirm","password","bank","account","update","security"]
 
@@ -24,12 +25,12 @@ def analyze_url(url):
         "num_dots": url.count("."),
         "num_digits": len(re.findall(r"\d+", url)),
 
-        # domain features
+    #domain features
         "has_ip": bool(re.search(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", url)),
         "has_@": "@" in url,
         "num_subdomain": len(subdomain.split(".")) if subdomain else 0,
 
-        # suspicious things
+    #suspicious things
         "num_sus_word": sum(1 for word in sus_words if word in url.lower()),
         "sus_tld": suffix in sus_tld,
 
@@ -40,6 +41,9 @@ def analyze_url(url):
         "has_hex_encoding": bool(re.search(r"%[0-9A-Fa-f]{2}", url)),
         "uses_https": parsed.scheme == "https",
     }
+    #suspicious words
+    for word in sus_words:
+        checks["contains_"+word]=word in url.lower()
     return checks
 
 # final score
