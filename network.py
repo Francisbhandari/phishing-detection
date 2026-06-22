@@ -48,7 +48,7 @@ def whois_features(domain: str) -> dict:
     ns = w.name_servers or []
     if isinstance(ns, str):
         ns = [ns]
-    name_servers_count = len(set(n.lower() for n in ns))
+    name_servers_count = len(set(ns_entry.lower() for ns_entry in ns))
 
     privacy_keywords = ("privacy", "proxy", "protect", "whoisguard", "redacted")
     is_privacy_protected = any(k in str(w).lower() for k in privacy_keywords)
@@ -133,14 +133,14 @@ def net_score(whois_f: dict, dns_f: dict) -> float:
 
     if not whois_f.get('whois_success', False):
         score += 0.25
-
-    age = whois_f.get('domain_age_days', -1)
-    if 0 < age < 30:
-        score += 0.40
-    elif 30 <= age < 90:
-        score += 0.20
-    elif age < 0:
-        score += 0.15
+    else:
+        age = whois_f.get('domain_age_days', -1)
+        if 0 < age < 30:
+            score += 0.40
+        elif 30 <= age < 90:
+            score += 0.20
+        elif age < 0:
+            score += 0.15
 
     if dns_f.get('ttl_value', 9999) < 300:
         score += 0.15
