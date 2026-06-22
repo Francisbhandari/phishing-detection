@@ -6,7 +6,6 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; PhishDetector/1.0)"}
 def fetch_page(url: str, timeout: int = 5) -> dict:
     result = {
             'reachable': False, 'final_url': url, 'redirect_count': 0, 'tls_valid': False, 'status_code': 0, 'html': ""}
-
     try:
         resp = requests.get(url, headers=HEADERS, timeout=timeout, allow_redirects=True, verify=True)
         result.update({
