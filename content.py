@@ -54,12 +54,12 @@ def content_features(page: dict) -> dict:
 
     favicon_tag = soup.find('link', rel=lambda r: r and 'icon' in r)
     if favicon_tag:
-    	href = favicon_tag.get("href", "")
-    	fav_domain = urlparse(urljoin(page["final_url"], href)).netloc
+        href = favicon_tag.get("href", "")
+        fav_domain = urlparse(urljoin(page["final_url"], href)).netloc
         if fav_domain and fav_domain != orig_domain:
             features["favicon_offsite"] = True
-            
-	all_links = soup.find_all("a", href=True)
+
+    all_links = soup.find_all("a", href=True)
     if all_links:
         offsite = sum(
             1 for a in all_links
@@ -67,14 +67,13 @@ def content_features(page: dict) -> dict:
         )
         features["low_link_ratio"] = (offsite / len(all_links)) > 0.70
 
-
-	if "©" in html or "copyright" in html.lower():
+    if "©" in html or "copyright" in html.lower():
         features["has_copyright"] = True
-        
+
     if "contextmenu" in html.lower() and "return false" in html.lower():
         features["disabled_right_click"] = True
-        
-	return features
+
+    return features
 	
 	
 def content_score(features: dict) -> float:
