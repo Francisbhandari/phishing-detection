@@ -1,7 +1,7 @@
 import lexical as l
 import content as c
 import network as n
-import predict as p
+from model import predict as p
 
 url = input("Enter url to check: ")
 
