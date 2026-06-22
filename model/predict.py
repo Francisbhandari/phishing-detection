@@ -4,7 +4,7 @@ def predict(X_pred: dict) -> float:
     with open('phishing_model.pkl', 'rb') as file:
         loaded_model = pickle.load(file)
     
-
+    import pandas as pd
     X = pd.DataFrame([X_pred])
     phis = loaded_model.predict(X)
 
