@@ -1,53 +1,107 @@
 import whois
 import dns.resolver as dr
+import ipaddress
 from datetime import datetime, timezone
 
 def whois_features(domain: str) -> dict:
+    FAIL = {
+        'whois_success':                 False,
+        'whois_missing':                 True,
+        'domain_age_days':               -1,
+        'expiration_days':               -1,
+        'creation_year':                 -1,
+        'domain_is_recent':              False,
+        'domain_registered_before_2020': False,
+        'registrar':                     '',
+        'registrar_valid':               False,
+        'name_servers_count':            0,
+        'is_privacy_protected':          False,
+    }
+
     try:
         w = whois.whois(domain)
-    except:
-        return {"whois_available":False, "domain_age_days":-1, "registrar": ""}
+    except Exception:
+        return FAIL
 
-    creation = w.creation_date
-    if isinstance(creation, list):
-        creation = creation[0]
+    now = datetime.now(timezone.utc)
 
-    age = -1
+    def _normalise(dt):
+        if isinstance(dt, list):
+            dt = dt[0]
+        if dt and dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
 
-    if creation:
-        try:
-            now = datetime.now(timezone.utc)
-            if creation.tzinfo is None:
-                creation = creation.replace(tzinfo=timezone.utc)
-            age = (now-creation).days
-        except Exception:
-            pass
+    creation   = _normalise(w.creation_date)
+    expiration = _normalise(w.expiration_date)
+
+    age_days = int((now - creation).days)   if creation   else -1
+    exp_days = int((expiration - now).days) if expiration else -1
+
+    creation_year                = creation.year if creation else -1
+    domain_is_recent             = 0 < age_days < 180
+    domain_registered_before_2020 = 0 < creation_year < 2020
+
+    registrar       = str(w.registrar or '')
+    registrar_valid = bool(registrar)
+
+    ns = w.name_servers or []
+    if isinstance(ns, str):
+        ns = [ns]
+    name_servers_count = len(set(n.lower() for n in ns))
+
+    privacy_keywords = ("privacy", "proxy", "protect", "whoisguard", "redacted")
+    is_privacy_protected = any(k in str(w).lower() for k in privacy_keywords)
 
     return {
-            'whois_available': True,
-            'domain_age_days': age,
-            'registrar': str(w.registrar or ''),
-            }
+        'whois_success':                 True,
+        'whois_missing':                 False,
+        'domain_age_days':               age_days,
+        'expiration_days':               exp_days,
+        'creation_year':                 creation_year,
+        'domain_is_recent':              domain_is_recent,
+        'domain_registered_before_2020': domain_registered_before_2020,
+        'registrar':                     registrar,
+        'registrar_valid':               registrar_valid,
+        'name_servers_count':            name_servers_count,
+        'is_privacy_protected':          is_privacy_protected,
+    }
+
+
+def _is_private_ip(ip: str) -> bool:
+    try:
+        return ipaddress.ip_address(ip).is_private
+    except ValueError:
+        return False
+
 
 def dns_features(domain: str) -> dict:
     results = {
-    "has_mx_record": False,
-    "has_txt_record": False,
-    "has_spf" = False,
-    "a_record_count": 0,
-    "ttl": -1
+        "success":                False,
+        "dns_resolves":           False,
+        "has_mx_record":          False,
+        "has_txt_record":         False,
+        "has_ns_record":          False,
+        "has_spf":                False,
+        "ttl_value":              -1,
+        "ip_count":               0,
+        "resolves_to_private_ip": False,
     }
 
     try:
         answers = dr.resolve(domain, 'A')
-        results['a_record_count'] = len(answers)
-        results['ttl'] = answers.rrset.ttl
+        ips = [r.address for r in answers]
+        results['success']      = True
+        results['dns_resolves'] = True
+        results['ip_count']     = len(ips)
+        results['ttl_value']    = answers.rrset.ttl
+        results['resolves_to_private_ip'] = any(_is_private_ip(ip) for ip in ips)
     except Exception:
         pass
 
     try:
         dr.resolve(domain, 'MX')
-        results['has_mx'] = True
+        results['has_mx_record'] = True
     except Exception:
         pass
 
@@ -59,10 +113,15 @@ def dns_features(domain: str) -> dict:
                 s.decode() if isinstance(s, bytes) else str(s)
                 for s in rdata.strings
             )
-
             if 'v=spf1' in txt_record.lower():
                 results['has_spf'] = True
                 break
+    except Exception:
+        pass
+
+    try:
+        dr.resolve(domain, 'NS')
+        results['has_ns_record'] = True
     except Exception:
         pass
 
@@ -72,11 +131,10 @@ def dns_features(domain: str) -> dict:
 def net_score(whois_f: dict, dns_f: dict) -> float:
     score = 0.0
 
-    if not whois_f.get('whois_available', False):
+    if not whois_f.get('whois_success', False):
         score += 0.25
 
     age = whois_f.get('domain_age_days', -1)
-
     if 0 < age < 30:
         score += 0.40
     elif 30 <= age < 90:
@@ -84,10 +142,10 @@ def net_score(whois_f: dict, dns_f: dict) -> float:
     elif age < 0:
         score += 0.15
 
-    if dns_f.get('ttl', 9999) < 300:
+    if dns_f.get('ttl_value', 9999) < 300:
         score += 0.15
 
-    if not dns_f.get('has_mx', False):
+    if not dns_f.get('has_mx_record', False):
         score += 0.05
 
     if not dns_f.get('has_spf', False):
