@@ -5,7 +5,7 @@ import math
 
 sus_words=["login","verify","secure","confirm","password","bank","account","update","security"]
 
-sus_tld=["xyz","click","site","online","shop","click","live","cm","tk","ml","cf","buzz","top","host"]
+sus_tld=["xyz","click","site","online","shop","live","cm","tk","ml","cf","buzz","top","host"]
 
 brand_words=["paypal","google","facebook","microsoft","apple","amazon","netflix","instagram","twitter","linkedin"]
 
@@ -19,7 +19,7 @@ def analyze_url(url):
     domain = ext.domain
     subdomain = ext.subdomain
     suffix = ext.suffix
-    full_domain = ext.top_domain_under_public_suffix
+    full_domain = ext.registered_domain
     hostname = parsed.hostname or ""
     path = parsed.path
     url_lower = url.lower()
@@ -39,6 +39,13 @@ def analyze_url(url):
     special_chars = re.findall(r"[^a-zA-Z0-9]", url)
 
     checks = {
+        # --- entropy features ---
+        "entropy_url":          shannon_entropy(url),
+        "entropy_hostname":     shannon_entropy(hostname),
+        "entropy_domain":       shannon_entropy(domain),
+        "entropy_path":         shannon_entropy(path),
+        "query_entropy":        shannon_entropy(parsed.query),
+
         # --- length features ---
         "url_length":           len(url),
         "domain_length":        len(domain),
