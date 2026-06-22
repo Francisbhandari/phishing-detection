@@ -45,6 +45,7 @@ def analyze_url(url):
         "hostname_length":      len(hostname),
         "path_length":          len(path),
         "first_dir_length":     len(first_dir),
+        "tld_length":           len(suffix),
 
         # --- structural features ---
         "path_segments_count":  len(path_segments),
